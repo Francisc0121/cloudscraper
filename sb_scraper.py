@@ -299,7 +299,7 @@ for line in lines:
             html = scraper.get(url).text
             soup = BeautifulSoup(html, 'html.parser')
             title = soup.title.string if soup.title else None
-            title = title.replace(' Playlist - HD Videos - SpankBang', '')
+            title = title.replace(' Playlist - HD Porn Videos - SpankBang', '')
             
             for char in illegal_chars:
                 title = title.replace(char, '-')
