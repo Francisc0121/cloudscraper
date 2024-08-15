@@ -288,64 +288,70 @@ for line in lines:
     if match:
         genesisURL = url
         page_number = 1
-        last_part = url.rsplit('/', 1)[-1] # Check if the last part of url after the last forward slash is a number
+        last_part = url.rsplit('/', 1)[-1]
         if re.match(r"^\d+$", last_part):
-            page_number = int(last_part)  # set page_number to the number
+            page_number = int(last_part)
         while True:
             url = genesisURL + '/' + str(page_number)
             if not page_exists(url):
                 break
-            scraper = cloudscraper.create_scraper()  # returns a CloudScraper instance
-            html = scraper.get(url).text  # return html
+            scraper = cloudscraper.create_scraper()
+            html = scraper.get(url).text
             soup = BeautifulSoup(html, 'html.parser')
             title = soup.title.string if soup.title else None
-            title = title.replace(' Playlist - HD Porn Videos - SpankBang', '')
+            title = title.replace(' Playlist - HD Videos - SpankBang', '')
             
             for char in illegal_chars:
                 title = title.replace(char, '-')
-            curator_span = soup.find('span', {'class': 'parent'})  # find span tag with class 'parent'. curator name is within a span
+            curator_span = soup.find('span', {'class': 'parent'})
             if curator_span is not None:
-                curator_link = curator_span.find('a')  # find a tag within that span
+                curator_link = curator_span.find('a')
                 if curator_link is not None:
-                    curator = curator_link.text  # get the text within the a tag
+                    curator = curator_link.text
                 for char in illegal_chars:
                     curator = curator.replace(char, '')
             else:
                 print('Curator not found')
                 curator = "Anon"
-
-            html_lines = html.split('\n') #split HTML into lines
             
-            html_filtered = [line for line in html_lines if "\" class=\"n\"" in line] #titles are included at this point
-            html_filtered = [line.replace('<a href="', '') for line in html_filtered] #remove <a href="
-            for i, line in enumerate(html_filtered):
-                html_filtered[i] = line.split('\" class=\"n\"', 1)[0]
-            html_filtered = ['https://spankbang.com' + line.replace(' ', '') for line in html_filtered]
-            # Write html_filtered lines to a txt file named after title
+            # New code to extract video URLs
+            video_items = soup.find_all('div', class_='video-item')
+            video_urls = []
+            for item in video_items:
+                a_tag = item.find('a', href=True)
+                if a_tag:
+                    relative_url = a_tag['href']
+                    full_url = 'https://spankbang.com' + relative_url
+                    video_urls.append(full_url)
+            
+            # Write video_urls to a txt file named after title
             with open(title + " - " + curator + '.txt', 'a') as f:
-                for line in html_filtered:
-                    f.write(line + '\n')
-            html_filtered = '\n'.join(html_filtered)
+                for url in video_urls:
+                    f.write(url + '\n')
+            
             print("Page " + str(page_number))
-            print(html_filtered)
-            if html_filtered == "":
-                page_number = page_number
+            print('\n'.join(video_urls))
+            
+            if not video_urls:
+                break
             else:
                 page_number += 1
-        time.sleep(1)
+            time.sleep(1)
+        
+        # Process the collected URLs
         with open(title + " - " + curator + '.txt', "r") as urls_file:
             urls_lines = urls_file.readlines()
         with open(title + " - " + curator + '.txt', "w") as urls_file:
             for i, url in enumerate(urls_lines):
                 print(str(i))
-                html = scraper.get(url.strip()).text #return html
+                html = scraper.get(url.strip()).text
                 soup = BeautifulSoup(html, 'html.parser')
-                og_url_tag = soup.select_one('meta[property="og:url"]') #find og:url
+                og_url_tag = soup.select_one('meta[property="og:url"]')
                 if og_url_tag is not None:
-                    og_url = og_url_tag['content'] # get the url from the content attribute
+                    og_url = og_url_tag['content']
                     print(og_url)
-                    urls_lines[i] = og_url + '\n' # replace the original url with og_url
-            urls_file.writelines(urls_lines)  # write all lines back to the file
+                    urls_lines[i] = og_url + '\n'
+            urls_file.writelines(urls_lines)
         continue
     
     for attempt in range(7):
