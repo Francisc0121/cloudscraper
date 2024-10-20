@@ -36,3 +36,4 @@ Any requests made from this session object to websites protected by Cloudflare a
 - Playlist URLs as input work to output a .txt file of URLs which can then be fed back into the program
 - split.py splits any txt file with several lines into 4 files. Can be used for playlists.
 - Does not work with VR videos.
+- You can rename the `.py` file and use it.
